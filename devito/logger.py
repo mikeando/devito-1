@@ -11,25 +11,18 @@ __all__ = ('set_log_level', 'set_log_noperf', 'is_log_enabled_for',
 
 logger = logging.getLogger('Devito')
 stream_handler = logging.StreamHandler()
-logger.addHandler(stream_handler)
 
 # Add extra logging levels (note: INFO has value=20, WARNING has value=30)
 DEBUG = logging.DEBUG
 YASK = 16
 YASK_WARN = 17
-DSE = 18
-DSE_WARN = 19
-PERF = 19
+DSE = logging.INFO
+DSE_WARN = logging.INFO
+PERF = logging.INFO
 INFO = logging.INFO
 WARNING = logging.WARNING
 ERROR = logging.ERROR
 CRITICAL = logging.CRITICAL
-
-logging.addLevelName(PERF, "PERF")
-logging.addLevelName(YASK, "YASK")
-logging.addLevelName(YASK_WARN, "YASK_WARN")
-logging.addLevelName(DSE, "DSE")
-logging.addLevelName(DSE_WARN, "DSE_WARN")
 
 logger_registry = {
     'DEBUG': DEBUG,
