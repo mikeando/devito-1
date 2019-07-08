@@ -294,7 +294,7 @@ class Compiler(GCCToolchain):
                 self, target, code, src_file,
                 cache_dir=cache_dir,
                 debug=configuration['debug-compiler'],
-                sleep_delay=sleep_delay)
+                )
 
         return recompiled, src_file
 
