@@ -170,7 +170,7 @@ class Distributor(AbstractDistributor):
         The decomposed Dimensions.
     comm : MPI communicator, optional
         The set of processes over which the domain is distributed. Defaults to
-        MPI.COMM_WORLD.
+        MPI.COMM_SELF.
     """
 
     def __init__(self, shape, dimensions, input_comm=None):
@@ -181,7 +181,7 @@ class Distributor(AbstractDistributor):
             if not MPI.Is_initialized():
                 MPI.Init()
 
-            self._input_comm = (input_comm or MPI.COMM_WORLD).Clone()
+            self._input_comm = (input_comm or MPI.COMM_SELF).Clone()
 
             # Make sure the cloned communicator will be freed up upon exit
             def cleanup():
