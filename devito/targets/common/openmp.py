@@ -161,7 +161,7 @@ class Ompizer(object):
     compilation time (e.g., this may happen when DefaultDimensions are used).
     """
 
-    CHUNKSIZE_NONAFFINE = 3
+    CHUNKSIZE_NONAFFINE = 1
     """
     Coefficient to adjust the chunk size in parallelized non-affine Iterations.
     """

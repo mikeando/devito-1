@@ -334,6 +334,9 @@ def generate_block_shapes(blockable, args, level):
     # Normalize
     ret = [tuple((k.name, v) for k, v in bs) for bs in ret]
 
+    # Run them all twice, to warm the caches
+    ret = sum(map(list, zip(ret, ret)), [])
+
     return ret
 
 
@@ -369,8 +372,8 @@ def generate_nthreads(nthreads, args, level):
 
 options = {
     'squeezer': 4,
-    'blocksize-l0': (8, 16, 24, 32, 64, 96, 128),
-    'blocksize-l1': (8, 16, 32),
+    'blocksize-l0': (4, 8, 16, 24, 32, 64, 96, 128),
+    'blocksize-l1': (4, 8, 16, 32),
     'stack_limit': resource.getrlimit(resource.RLIMIT_STACK)[0] / 4
 }
 """Autotuning options."""
