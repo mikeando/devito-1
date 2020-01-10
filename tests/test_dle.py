@@ -491,54 +491,6 @@ class TestNestedParallelism(object):
                                                 'num_threads(nthreads_nested)')
 
 
-class TestOffloading(object):
-
-    @switchconfig(platform='nvidiaX')
-    def test_basic(self):
-        grid = Grid(shape=(3, 3, 3))
-
-        u = TimeFunction(name='u', grid=grid)
-
-        op = Operator(Eq(u.forward, u + 1), dle=('advanced', {'openmp': True}))
-
-        trees = retrieve_iteration_tree(op)
-        assert len(trees) == 1
-
-        assert trees[0][1].pragmas[0].value ==\
-            'omp target teams distribute parallel for collapse(3)'
-        assert op.body[1].header[1].value ==\
-            ('omp target enter data map(to: u[0:u_vec->size[0]]'
-             '[0:u_vec->size[1]][0:u_vec->size[2]][0:u_vec->size[3]])')
-        assert op.body[1].footer[0].value ==\
-            ('omp target exit data map(from: u[0:u_vec->size[0]]'
-             '[0:u_vec->size[1]][0:u_vec->size[2]][0:u_vec->size[3]])')
-
-    @switchconfig(platform='nvidiaX')
-    def test_multiple_eqns(self):
-        grid = Grid(shape=(3, 3, 3))
-
-        u = TimeFunction(name='u', grid=grid)
-        v = TimeFunction(name='v', grid=grid)
-
-        op = Operator([Eq(u.forward, u + v + 1), Eq(v.forward, u + v + 4)],
-                      dle=('advanced', {'openmp': True}))
-
-        trees = retrieve_iteration_tree(op)
-        assert len(trees) == 1
-
-        assert trees[0][1].pragmas[0].value ==\
-            'omp target teams distribute parallel for collapse(3)'
-        for i, f in enumerate([u, v]):
-            assert op.body[2].header[2 + i].value ==\
-                ('omp target enter data map(to: %(n)s[0:%(n)s_vec->size[0]]'
-                 '[0:%(n)s_vec->size[1]][0:%(n)s_vec->size[2]][0:%(n)s_vec->size[3]])' %
-                 {'n': f.name})
-            assert op.body[2].footer[i].value ==\
-                ('omp target exit data map(from: %(n)s[0:%(n)s_vec->size[0]]'
-                 '[0:%(n)s_vec->size[1]][0:%(n)s_vec->size[2]][0:%(n)s_vec->size[3]])' %
-                 {'n': f.name})
-
-
 @switchconfig(autopadding=True, platform='knl7210')  # Platform is to fix pad value
 @patch("devito.dse.rewriters.AdvancedRewriter.MIN_COST_ALIAS", 1)
 def test_minimize_reminders_due_to_autopadding():
