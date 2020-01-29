@@ -397,10 +397,19 @@ class Operator(Callable):
         # pointers to ctypes.Struct
         for p in self.parameters:
             try:
-                args.update(kwargs.get(p.name, p)._arg_as_ctype(args, alias=p))
+                # We need to hold on to the original item too, otherwise we might 
+                # gc the object in args[k], leading us to have a dangling pointer
+                pp = kwargs.get(p.name, p)
+                cc = pp._arg_as_ctype(args, alias=p)
+                for k,v in cc.items():
+                  args[k] = (v, args[k])
             except AttributeError:
                 # User-provided floats/ndarray obviously do not have `_arg_as_ctype`
-                args.update(p._arg_as_ctype(args, alias=p))
+                # We need to hold on to the original item too, otherwise we might 
+                # gc the object in args[k], leading us to have a dangling pointer
+                cc = p._arg_as_ctype(args, alias=p)
+                for k,v in cc.items():
+                  args[k] = (v,args[k])
 
         # Add in the profiler argument
         args[self._profiler.name] = self._profiler.timer.reset()
@@ -425,10 +434,18 @@ class Operator(Callable):
     def _postprocess_arguments(self, args, **kwargs):
         """Process runtime arguments upon returning from ``.apply()``."""
         for p in self.parameters:
+            arg_p = args[p.name]
+            # In some cases the args entry is a tuple, to ensure we dont GC the
+            # object containing where our C pointer points. In that case we're
+            # only interested in the first entry.
+            arg_p = arg_p[0] if isinstance(arg_p, tuple) else arg_p
+            kwarg_p = kwargs.get(p.name)
             try:
-                p._arg_apply(args[p.name], args[p.coordinates.name], kwargs.get(p.name))
+                arg_pc = args[p.coordinates.name]
+                arg_pc = arg_pc[0] if isinstance(arg_pc, tuple) else arg_pc
+                p._arg_apply(arg_p, arg_pc, kwargs_p)
             except AttributeError:
-                p._arg_apply(args[p.name], kwargs.get(p.name))
+                p._arg_apply(arg_p, kwarg_p)
 
     @cached_property
     def _known_arguments(self):
@@ -562,8 +579,17 @@ class Operator(Callable):
         with self._profiler.timer_on('arguments'):
             args = self.arguments(**kwargs)
 
-        # Invoke kernel function with args
-        arg_values = [args[p.name] for p in self.parameters]
+        arg_values = []
+        for p in self.parameters:
+          arg = args[p.name]
+          # In some cases the args entry is a tuple, to ensure we dont GC the
+          # object containing where our C pointer points. In that case we're
+          # only interested in the first entry.
+          if isinstance(arg, tuple):
+            arg_values.append(arg[0])
+          else:
+            arg_values.append(arg)
+
         try:
             cfunction = self.cfunction
             with self._profiler.timer_on('apply', comm=args.comm):
