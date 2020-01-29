@@ -71,7 +71,7 @@ class Data(np.ndarray):
         return obj
 
     def __del__(self):
-        if self._memfree_args is None:
+        if getattr(self, "_memfree_args", None) is None:
             return
         self._allocator.free(*self._memfree_args)
         self._memfree_args = None
