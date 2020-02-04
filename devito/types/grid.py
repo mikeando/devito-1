@@ -98,7 +98,7 @@ class Grid(ArgProvider):
 
     def __init__(self, shape, extent=None, origin=None, dimensions=None,
                  time_dimension=None, dtype=np.float32, subdomains=None,
-                 comm=None):
+                 comm=None, topology=None):
         self._shape = as_tuple(shape)
         self._extent = as_tuple(extent or tuple(1. for _ in self.shape))
         self._dtype = dtype
@@ -138,7 +138,7 @@ class Grid(ArgProvider):
         else:
             raise ValueError("`time_dimension` must be None or of type TimeDimension")
 
-        self._distributor = Distributor(self.shape, self.dimensions, comm)
+        self._distributor = Distributor(self.shape, self.dimensions, comm, topology)
 
     def __repr__(self):
         return "Grid[extent=%s, shape=%s, dimensions=%s]" % (
